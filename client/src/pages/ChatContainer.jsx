@@ -7,12 +7,10 @@ import { useCookies } from 'react-cookie'
 
 import Split from 'react-split'
 
-import { io } from "socket.io-client"
 
-const ChatContainer = ({ user }) => {
+const ChatContainer = ({ user, notification, setNotification, socket }) => {
     const [ cookies, setCookie, removeCookie ] = useCookies(['user'])
-    
-    const socket = useRef();
+
     const scrollRef = useRef()
 
     const [ clickedUser, setClickedUser ] = useState(null)
@@ -26,8 +24,6 @@ const ChatContainer = ({ user }) => {
             window.location.reload()
         }
 
-    const host = "http://localhost:8000"
-
     const userId = cookies.UserId
 
         useEffect(() => {
@@ -35,14 +31,22 @@ const ChatContainer = ({ user }) => {
                 navigate("/")
             }
         }, [userId]);
-    
 
-    useEffect(() => {
-        if (user) {
-          socket.current = io(host)
-          socket.current.emit("add-user", user._id)
-        }
-      }, [user]);
+        // useEffect(() => {
+            
+        //     socketNotification()
+            
+            
+            
+        // }, [socket]);
+        
+        // const socketNotification = async () => {
+        //     await socket.current?.on("notification", (data) => {
+        //         setNotification(true)
+        //         console.log(notification)
+        //         console.log(socket.current)
+        //     })
+        //   }
 
 
     useEffect(() => {
@@ -56,11 +60,11 @@ const ChatContainer = ({ user }) => {
         <>
 
         {user && <div className="chat-container">
-            <ChatHeader user={user} logout={logout} isChat={true}/>
+            <ChatHeader socket={socket} user={user} logout={logout} isChat={true}/>
             <Split className="chat-split" sizes={[20, 80]} minSize={100}>
-            <MatchesDisplay  matches={user.matches} clickedUser={clickedUser} setClickedUser={setClickedUser}/>
+            <MatchesDisplay  matches={user.matches} clickedUser={clickedUser} setClickedUser={setClickedUser} notification={notification} setNotification={setNotification}/>
 
-            <ChatDisplay  messages={messages} setMessages={setMessages} user={user} clickedUser={clickedUser} socket={socket} scrollRef={scrollRef}/>
+            <ChatDisplay messages={messages} setMessages={setMessages} user={user} clickedUser={clickedUser} socket={socket} scrollRef={scrollRef} notification={notification} setNotification={setNotification}/>
             </Split>
         </div>}
         </>

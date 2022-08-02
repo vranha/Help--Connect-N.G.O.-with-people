@@ -1,4 +1,4 @@
-const { register, getUser, getUsers, getGenderedUsers, addMatch, addDislike, login, logout, details } = require("../controllers/userController")
+const { register, getUser, getUsers, getGenderedUsers, addMatch, addDislike, login, logout, details, uploadImage, getImage } = require("../controllers/userController")
 
 
 const router = require("express").Router();
@@ -13,5 +13,8 @@ router.get("/users", getUsers);
 router.get("/gendered-users", getGenderedUsers);
 router.put("/addmatch", addMatch);
 router.put("/adddislike", addDislike);
+router.post("/upload-image", uploadImage);
+router.get("/get-image", getImage);
+
 
 module.exports = router

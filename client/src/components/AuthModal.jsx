@@ -29,10 +29,6 @@ const AuthModal = ({ setShowModal,  isSignUp }) => {
                 setError('Passwords need to match!')
                 return
             }
-            if (isSignUp && (password !== confirmPassword)) {
-                setError('Passwords need to match!')
-                return
-            }
             if (!isSignUp && (email === "")) {
                 setError('Email and Password are required')
                 return
@@ -44,13 +40,14 @@ const AuthModal = ({ setShowModal,  isSignUp }) => {
 
             const { data } = await axios.post(`http://localhost:8000/api/auth/${isSignUp ? 'register' : 'login'}`, { email, password })
 
+            
+            const failed = data.status === false
+            if (failed) {
+                return setError(data.msg)
+            }
             setCookie('AuthToken', data.token, { path: '/' })
             setCookie('UserId', data.userId, { path: '/' })
-
-            const failed = data.status === false
-            if (failed) setError(data.msg)
-
-
+            
             const success = data.status === true
             if (success && isSignUp) navigate ('/onboarding')
             if (success && !isSignUp) navigate ('/dashboard')

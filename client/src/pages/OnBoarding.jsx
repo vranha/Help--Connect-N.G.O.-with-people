@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
-import axios from 'axios';
-import { useCookies } from 'react-cookie'
+import axios from "axios";
+import { useCookies } from "react-cookie";
 import { BsUpload } from "react-icons/bs";
-import { Image } from 'cloudinary-react'
+import { Image } from "cloudinary-react";
+import Lottie from "react-lottie";
+import loader from "../assets/loader.json";
+import profile from "../assets/profile.json";
 
 function OnBoarding() {
-    const [cookies, setCookie, removeCookie] = useCookies(['user']);
+    const [cookies, setCookie, removeCookie] = useCookies(["user"]);
 
     const userId = cookies.UserId;
 
@@ -22,23 +25,29 @@ function OnBoarding() {
         gender_interest: "",
         url: "",
         about: "",
-        matches: ""
+        matches: "",
+    });
+    const [hasData, setHasData] = useState(false);
 
-    })
-    const [hasData, setHasData] = useState(false)
+    const [fileInputState, setFileInputState] = useState("");
+    const [previewSource, setPreviewSource] = useState("");
+    const [imageId, setImageId] = useState("");
+    const [imageLoading, setImageLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [disableUpdate, setDisableUpdate] = useState(false);
+    const [uploaded, setUploaded] = useState(false);
 
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const getUser = async () => {
         try {
             const response = await axios.get("http://localhost:8000/api/auth/user", { params: { userId } });
 
             console.log(response.data);
-            setFormData(response.data)
+            setFormData(response.data);
             if (response.data.first_name.length > 0) {
-                setHasData(true)
+                setHasData(true);
             }
-
         } catch (error) {
             console.log(error);
         }
@@ -46,57 +55,97 @@ function OnBoarding() {
 
     useEffect(() => {
         getUser();
+    }, [imageLoading]);
+
+    const handleFileInputChange = (e) => {
+        const file = e.target.files[0];
+        previewFile(file);
+    };
+
+    const previewFile = (file) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = () => {
+            setPreviewSource(reader.result);
+            setDisableUpdate(true)
+            setUploaded(false);
+        };
+    };
+
+    const handleSubmitFile = (e) => {
+        e.preventDefault();
+        if (!previewSource) return;
+
+        uploadImage(previewSource);
+        setDisableUpdate(false)
+    };
+
+    const uploadImage = async (base64EncodedImage) => {
+        console.log(base64EncodedImage);
+        setImageLoading(true);
+        try {
+            await fetch("http://localhost:8000/api/auth/upload-image", {
+                method: "POST",
+                body: JSON.stringify({ data: base64EncodedImage, user: userId }),
+                headers: { "Content-type": "application/json" },
+            });
+
+            setImageLoading(false);
+            setUploaded(true)
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const getImage = async () => {
+        setLoading(true);
+        try {
+            const response = await axios("http://localhost:8000/api/auth/get-image", { params: { userId } });
+            setImageId(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    useEffect(() => {
+        getImage();
     }, []);
 
-
-    const uploadFile = (files) => {
-        const data = new FormData()
-        data.append("file", files[0])
-        data.append("upload_preset", "usg1rnck")
-        data.append("cloud_name", "dumpr6tqj")
-        data.append('folder', 'userImages');
-
-        var uploadOptions = {
-            params : {
-              'public_id': userId,
-              api_key : '768398349842437',
-              api_secret : '6_je4z3D_hnbWwDgo1TkWKWRRww'
-            }
-        }
-       axios.put("https://api.cloudinary.com/v1_1/dumpr6tqj/image/upload", data, uploadOptions)
-       .then((response) => {
-           console.log(response)
-       })
-    }
-
-
-
     const handleSubmit = async (e) => {
-        console.log("submitted");
+        console.log("submitted", formData);
         e.preventDefault();
         try {
-            const response = await axios.put('http://localhost:8000/api/auth/details', { formData })
-            const success = response.status === 200
-            if (success) navigate('/dashboard')
-            if (success) window.location.reload()
-
+            const response = await axios.put("http://localhost:8000/api/auth/details", { formData });
+            const success = response.status === 200;
+             if (success) navigate('/dashboard/gallery')
+            if (success) window.location.reload();
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
     };
 
     const handleChange = (e) => {
         console.log("e", e);
-        const value = e.target.type === 'checkbox' ?  e.target.checked : e.target.type === 'file' ? e.target.files[0] : e.target.value
-        const name = e.target.name
-
+        const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+        const name = e.target.name;
+        console.log(imageId);
         setFormData((prevState) => ({
             ...prevState,
-            [name] : value
-        }))
+            [name]: value,
+            //  url : imageId ? imageId : formData.url,
+        }));
     };
 
-    console.log(formData)
+    console.log(formData);
+
+    const defaultOptions = {
+        loop: true,
+        autoplay: true,
+        rendererSettings: {
+            preserveAspectRatio: "xMidYMid slice",
+        },
+    };
 
     return (
         <>
@@ -119,33 +168,33 @@ function OnBoarding() {
                             />
                             <label>Birthday</label>
                             <div className="multiple-input-container">
-                            <input
-                                type="number"
-                                id="dob_day"
-                                name="dob_day"
-                                placeholder="DD"
-                                required={true}
-                                value={formData.dob_day}
-                                onChange={handleChange}
-                            />
-                            <input
-                                type="number"
-                                id="dob_month"
-                                name="dob_month"
-                                placeholder="MM"
-                                required={true}
-                                value={formData.dob_month}
-                                onChange={handleChange}
-                            />
-                            <input
-                                type="number"
-                                id="dob_year"
-                                name="dob_year"
-                                placeholder="YYYY"
-                                required={true}
-                                value={formData.dob_year}
-                                onChange={handleChange}
-                            />
+                                <input
+                                    type="number"
+                                    id="dob_day"
+                                    name="dob_day"
+                                    placeholder="DD"
+                                    required={true}
+                                    value={formData.dob_day}
+                                    onChange={handleChange}
+                                />
+                                <input
+                                    type="number"
+                                    id="dob_month"
+                                    name="dob_month"
+                                    placeholder="MM"
+                                    required={true}
+                                    value={formData.dob_month}
+                                    onChange={handleChange}
+                                />
+                                <input
+                                    type="number"
+                                    id="dob_year"
+                                    name="dob_year"
+                                    placeholder="YYYY"
+                                    required={true}
+                                    value={formData.dob_year}
+                                    onChange={handleChange}
+                                />
                             </div>
                             <label>I am a...</label>
                             <div className="multiple-input-container">
@@ -153,7 +202,7 @@ function OnBoarding() {
                                     type="radio"
                                     id="Person-gender-identity"
                                     name="gender_identity"
-                                    checked={formData.gender_identity === 'Person'}
+                                    checked={formData.gender_identity === "Person"}
                                     value="Person"
                                     onChange={handleChange}
                                 />
@@ -162,7 +211,7 @@ function OnBoarding() {
                                     type="radio"
                                     id="N.G.O.-gender-identity"
                                     name="gender_identity"
-                                    checked={formData.gender_identity === 'N.G.O.'}
+                                    checked={formData.gender_identity === "N.G.O."}
                                     value="N.G.O."
                                     onChange={handleChange}
                                 />
@@ -182,7 +231,7 @@ function OnBoarding() {
                                     type="radio"
                                     id="Person-gender-interest"
                                     name="gender_interest"
-                                    checked={formData.gender_interest === 'Person'}
+                                    checked={formData.gender_interest === "Person"}
                                     value="Person"
                                     onChange={handleChange}
                                 />
@@ -191,7 +240,7 @@ function OnBoarding() {
                                     type="radio"
                                     id="N.G.O.-gender-interest"
                                     name="gender_interest"
-                                    checked={formData.gender_interest === 'N.G.O.'}
+                                    checked={formData.gender_interest === "N.G.O."}
                                     value="N.G.O."
                                     onChange={handleChange}
                                 />
@@ -200,7 +249,7 @@ function OnBoarding() {
                                     type="radio"
                                     id="everyone-gender-interest"
                                     name="gender_interest"
-                                    checked={formData.gender_interest === 'everyone'}
+                                    checked={formData.gender_interest === "everyone"}
                                     value="everyone"
                                     onChange={handleChange}
                                 />
@@ -213,14 +262,43 @@ function OnBoarding() {
                                     type="file"
                                     name="url"
                                     id="url"
-                                    onChange={(event) => uploadFile(event.target.files)}
+                                    onChange={handleFileInputChange}
+                                    value={fileInputState}
                                     // required={true}
                                 />
-                                <label htmlFor="url" style={{fontSize: 18}}> <BsUpload style={{fontSize: 18, marginRight: 10}} /> Upload Picture</label>
+                                <label htmlFor="url" style={{ fontSize: 18 }}>
+                                    {" "}
+                                    <BsUpload style={{ fontSize: 18, marginRight: 10 }} /> Choose Picture
+                                </label>
                                 <div className="photo-container">
-                                     {/* <img src={formData.url ? formData.url : "https://icon-library.com/images/default-user-icon/default-user-icon-26.jpg" } alt="profile pic preview" /> */}
-                                     <Image cloudName="dumpr6tqj" publicId={`https://res.cloudinary.com/dumpr6tqj/image/upload/v1654688336/userImages/${userId}.png`} />
+                                    {previewSource && <img className="image" src={previewSource} alt="chosen" />}
+                                    {!previewSource && !loading && imageId &&(
+                                        <Image
+                                            className="image"
+                                            cloudName="dumpr6tqj"
+                                            publicId={imageId}
+                                            alt="imgchosen"
+                                        />
+                                   
+                                    )}
+                                    {!imageId && !previewSource && <Lottie
+                                            options={{ animationData: profile, ...defaultOptions }}
+                                            style={{ padding: 20 }}
+                                        />}
+                                    {loading && previewSource && (
+                                        <Lottie
+                                            options={{ animationData: loader, ...defaultOptions }}
+                                            width={200}
+                                            height={200}
+                                            speed={2}
+                                        />
+                                    )}
                                 </div>
+                                {uploaded && <p style={{marginTop: "-10px"}}>Image uploaded 😍 </p>}
+                                <button onClick={handleSubmitFile} disabled={!disableUpdate}>
+                                    {" "}
+                                    Upload
+                                </button>
                             </div>
                             <label htmlFor="about"></label>
                             <input
@@ -234,7 +312,7 @@ function OnBoarding() {
                             />
                         </section>
                     </div>
-                        <input type="submit" />
+                    <input type="submit" />
                 </form>
             </div>
         </>

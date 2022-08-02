@@ -2,6 +2,8 @@ const User = require("../models/userModel");
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { cloudinary } = require('../utils/cloudinary')
+
 
 // Sign up to the Database
 
@@ -178,15 +180,78 @@ module.exports.getUsers = async (req, res, next) => {
     }
 };
 
-// module.exports.getAllUsers = async (req,res,next) => {
 
-//  try {
-//     const users = await User.find({ user_id: { $ne: req.params.id } }).select([
-//         "email", "url", "gender_interest", "gender_identity", "first_name"
-//     ])
-//     return res.json(users);
 
-//  } catch (ex) {
-//      next(ex)
-//  }
-// }
+
+module.exports.getImage = async (req, res) => {
+    const userId = req.query.userId;
+    
+console.log(userId);
+    const { resources } = await cloudinary.search.expression(`public_id:help_web_images/${userId}`)
+    .sort_by('public_id', 'desc')
+    .max_results(30)
+    .execute();
+    const publicIds = resources.map((file) => file.secure_url)
+    res.send(publicIds[0])
+    try {
+       
+
+    } catch (error) {
+        console.error(error);
+        
+    }
+};
+
+
+
+module.exports.uploadImage = async (req, res) => {
+
+    try {
+        const fileStr = req.body.data;
+        const userId = req.body.user
+        const uploadedResponse = await cloudinary.uploader.
+        upload(fileStr, {
+            upload_preset: 'help_setup',
+            public_id: userId,
+            overwrite: true
+        })
+        console.log(uploadedResponse)
+
+        const query = { user_id: userId };
+
+        const updateDocument = {
+            $set: {
+                url: uploadedResponse.secure_url,
+            },
+        };
+
+        const insertedUser = await User.updateOne(query, updateDocument);
+
+        res.json({insertedUser, msg: "YAYAYAYA" })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({err: 'Something went wrong'})
+    }
+};
+
+
+
+// module.exports.getImages = async (req, res) => {
+
+//     const { resources } = await cloudinary.search.expression('folder:help_web_images')
+//     .sort_by('public_id', 'desc')
+//     .max_results(30)
+//     .execute();
+//     const publicIds = resources.map((file) => file.public_id)
+//     res.send(publicIds)
+//     try {
+       
+
+//     } catch (error) {
+//         console.error(error);
+        
+//     }
+// };
+
+
+

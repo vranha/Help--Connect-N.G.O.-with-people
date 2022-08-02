@@ -5,7 +5,7 @@ import { IoMdSend } from "react-icons/io";
 import Picker from "emoji-picker-react";
 
 
-const ChatInput = ({ user, clickedUser, socket, messages, setMessages, scrollRef, getUserMessages, getClickedUsersMessages }) => {
+const ChatInput = ({ user, clickedUser, socket, messages, setMessages, notification, setNotification, scrollRef, getUserMessages, getClickedUsersMessages }) => {
     const [textArea, setTextArea] = useState("")
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [arrivalMessage, setArrivalMessage] = useState(null);
@@ -53,8 +53,9 @@ const ChatInput = ({ user, clickedUser, socket, messages, setMessages, scrollRef
 
     useEffect(() => {
         if (socket.current) {
-            socket.current.on("msg-recieve", (textArea) => {
-                setArrivalMessage({fromSelf:false, message: textArea})
+            socket.current.on("msg-recieve", (messageData) => {
+                setArrivalMessage({fromSelf:false, message: messageData})
+      
             })
         }
     }, []);
@@ -86,7 +87,6 @@ const ChatInput = ({ user, clickedUser, socket, messages, setMessages, scrollRef
                         }}
                         />
                 <button 
-                className="secondary-button" 
                 onClick={addMessage}  
                 ><IoMdSend /></button>
             </div>

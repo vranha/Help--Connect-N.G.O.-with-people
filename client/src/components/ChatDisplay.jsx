@@ -7,7 +7,7 @@ import hello from '../assets/hello.json'
 
 
 
-const ChatDisplay = ({ user , clickedUser, socket, scrollRef, messages, setMessages }) => {
+const ChatDisplay = ({ user , clickedUser, socket, scrollRef, messages, setMessages, notification, setNotification }) => {
     // const userId = user?.user_id
     // const clickedUserId = clickedUser?.user_id
     // const [clickedUsersMessages, setClickedUsersMessages] = useState(null)
@@ -38,6 +38,7 @@ const ChatDisplay = ({ user , clickedUser, socket, scrollRef, messages, setMessa
     useEffect( () => {
        getUsersMessages()
     }, [clickedUser])
+    
 
 
 
@@ -63,6 +64,8 @@ const ChatDisplay = ({ user , clickedUser, socket, scrollRef, messages, setMessa
          socket={socket}
          messages={messages}
          setMessages={setMessages}
+         notification={notification}
+          setNotification={setNotification}
          /> }
         </div> 
     )

@@ -4,7 +4,7 @@ import { useCookies } from 'react-cookie'
 
 
 
-function MatchesDisplay({ matches, setClickedUser, clickedUser}) {
+function MatchesDisplay({ matches, setClickedUser, clickedUser, notification, setNotification}) {
   const [matchedProfiles, setMatchedProfiles] = useState(null);
   const [active, setActive] = useState(false);
   const [cookies, setCookie, removeCookie] = useCookies(['user']);
@@ -39,6 +39,13 @@ const filteredMatchesProfiles = matchedProfiles?.filter(matchedProfile => matche
                         <img src={match?.url} alt={match?.first_name + 'profile'}/>
                     </div>
                     <h3>{match?.first_name}</h3>
+                  {notification &&
+                  <div className="notification">
+                    <div>
+
+                    </div>
+                  </div>
+                    }
                 </div>
             ))}
         </div>
